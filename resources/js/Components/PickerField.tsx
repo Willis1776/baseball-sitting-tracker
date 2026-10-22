@@ -30,17 +30,19 @@ export default function PickerField({
     const fieldRef = useRef<HTMLDivElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
 
-    // Close when the user taps or tabs into anything outside the field and its panel.
+    // Close when the user taps or tabs into anything outside the field and its panel. This listens
+    // for `click`, not `pointerdown`: closing shrinks the sheet, and on iOS the click then lands on
+    // whatever moved under the finger (often the sheet backdrop) instead of the field that was tapped.
     useEffect(() => {
         if (!open) return;
         const onOutside = (e: Event) => {
             const target = e.target as Node;
             if (!fieldRef.current?.contains(target) && !panelRef.current?.contains(target)) onOpenChange(false);
         };
-        document.addEventListener('pointerdown', onOutside);
+        document.addEventListener('click', onOutside);
         document.addEventListener('focusin', onOutside);
         return () => {
-            document.removeEventListener('pointerdown', onOutside);
+            document.removeEventListener('click', onOutside);
             document.removeEventListener('focusin', onOutside);
         };
     }, [open, onOpenChange]);

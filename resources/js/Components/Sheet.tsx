@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 /**
@@ -30,11 +30,22 @@ export default function Sheet({
         };
     }, [open, onClose]);
 
+    // Only a press that starts on the backdrop closes the sheet. A tap that began inside it can
+    // end up "clicking" the backdrop if the sheet shrinks under the finger (e.g. a picker closing).
+    const pressedBackdrop = useRef(false);
+
     if (!open) return null;
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-label={title}>
-            <div className="absolute inset-0 bg-slate-900/50 animate-[fade_150ms_ease-out]" onClick={onClose} />
+            <div
+                className="absolute inset-0 bg-slate-900/50 animate-[fade_150ms_ease-out]"
+                onPointerDown={(e) => (pressedBackdrop.current = e.target === e.currentTarget)}
+                onClick={(e) => {
+                    if (pressedBackdrop.current && e.target === e.currentTarget) onClose();
+                    pressedBackdrop.current = false;
+                }}
+            />
             <div className="relative flex max-h-[92dvh] w-full flex-col rounded-t-3xl bg-white shadow-xl sm:max-w-lg sm:rounded-3xl animate-[rise_200ms_ease-out]">
                 <div className="mx-auto mt-2 h-1.5 w-10 rounded-full bg-slate-200 sm:hidden" />
                 <div className="flex items-center justify-between gap-3 px-5 pt-3 pb-2 sm:pt-5">
