@@ -12,6 +12,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Super admin, password from ADMIN_PASSWORD in .env; firstOrCreate so re-seeding never resets a changed password.
+        if ($password = config('sitting.admin_password')) {
+            User::firstOrCreate(
+                ['email' => config('sitting.super_admin_email')],
+                ['name' => 'Michael Willis', 'password' => $password, 'is_admin' => true, 'email_verified_at' => now()],
+            );
+        } else {
+            $this->command?->warn('ADMIN_PASSWORD is not set in .env, so the super admin account was not seeded.');
+        }
+
         $user = User::firstOrCreate(
             ['email' => 'coach@example.test'],
             ['name' => 'Dev Coach', 'is_admin' => true, 'email_verified_at' => now()],

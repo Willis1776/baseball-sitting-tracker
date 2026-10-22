@@ -1,4 +1,6 @@
 @import 'tailwindcss';
+/* Layered so Tailwind utilities (e.g. on DatePicker) override the calendar's defaults. */
+@import 'react-day-picker/style.css' layer(components);
 
 @source '../../storage/framework/views/*.php';
 @source '../views/**/*.blade.php';

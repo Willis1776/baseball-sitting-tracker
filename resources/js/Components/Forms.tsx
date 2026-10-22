@@ -1,7 +1,9 @@
 import { useForm } from '@inertiajs/react';
 import clsx from 'clsx';
 import { FormEvent } from 'react';
+import DatePicker from '@/Components/DatePicker';
 import Sheet from '@/Components/Sheet';
+import TimePicker from '@/Components/TimePicker';
 import { Button, Field, Input, Select, Textarea } from '@/Components/ui';
 import { today } from '@/lib/format';
 import { route } from '@/lib/route';
@@ -115,13 +117,27 @@ export function CompetitionFormSheet({
                         placeholder={form.data.type === 'league' ? 'e.g. Fall Rec League' : 'e.g. Labor Day Classic'}
                     />
                 </Field>
-                <div className="grid grid-cols-2 gap-3">
-                    <Field label="Starts" error={form.errors.starts_on} id="comp-start">
-                        <Input id="comp-start" type="date" value={form.data.starts_on} onChange={(e) => form.setData('starts_on', e.target.value)} />
-                    </Field>
-                    <Field label="Ends" error={form.errors.ends_on} id="comp-end">
-                        <Input id="comp-end" type="date" value={form.data.ends_on} onChange={(e) => form.setData('ends_on', e.target.value)} />
-                    </Field>
+                <div className="grid grid-flow-dense grid-cols-2 gap-3">
+                    <DatePicker
+                        id="comp-start"
+                        label="Starts"
+                        optional
+                        value={form.data.starts_on}
+                        onChange={(value) =>
+                            // An end date before the new start would fail validation, so drop it.
+                            form.setData((data) => ({ ...data, starts_on: value, ends_on: value && data.ends_on && data.ends_on < value ? '' : data.ends_on }))
+                        }
+                        error={form.errors.starts_on}
+                    />
+                    <DatePicker
+                        id="comp-end"
+                        label="Ends"
+                        optional
+                        min={form.data.starts_on || undefined}
+                        value={form.data.ends_on}
+                        onChange={(value) => form.setData('ends_on', value)}
+                        error={form.errors.ends_on}
+                    />
                 </div>
             </form>
         </Sheet>
@@ -152,7 +168,7 @@ export function GameFormSheet({
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
-        form.transform((data) => ({ ...data, competition_id: data.competition_id || null, starts_at: data.starts_at || null }));
+        form.transform((data) => ({ ...data, competition_id: data.competition_id || null }));
         const options = { preserveScroll: true, onSuccess: () => onClose() };
         game ? form.put(route('games.update', [team.id, game.id]), options) : form.post(route('games.store', team.id), options);
     };
@@ -172,13 +188,21 @@ export function GameFormSheet({
                 <Field label="Opponent" error={form.errors.opponent} id="game-opp">
                     <Input id="game-opp" value={form.data.opponent} onChange={(e) => form.setData('opponent', e.target.value)} placeholder="Optional" />
                 </Field>
-                <div className="grid grid-cols-2 gap-3">
-                    <Field label="Date" error={form.errors.played_on} id="game-date">
-                        <Input id="game-date" type="date" value={form.data.played_on} onChange={(e) => form.setData('played_on', e.target.value)} />
-                    </Field>
-                    <Field label="Time" error={form.errors.starts_at} id="game-time">
-                        <Input id="game-time" type="time" value={form.data.starts_at} onChange={(e) => form.setData('starts_at', e.target.value)} />
-                    </Field>
+                <div className="grid grid-flow-dense grid-cols-2 gap-3">
+                    <DatePicker
+                        id="game-date"
+                        label="Date"
+                        value={form.data.played_on}
+                        onChange={(value) => form.setData('played_on', value)}
+                        error={form.errors.played_on}
+                    />
+                    <TimePicker
+                        id="game-time"
+                        label="Time"
+                        value={form.data.starts_at}
+                        onChange={(value) => form.setData('starts_at', value)}
+                        error={form.errors.starts_at}
+                    />
                 </div>
                 <div className="grid grid-cols-[1fr_7rem] gap-3">
                     <Field label="League / tournament" error={form.errors.competition_id} id="game-comp">

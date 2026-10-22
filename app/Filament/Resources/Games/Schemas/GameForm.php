@@ -27,7 +27,8 @@ class GameForm
                 TextInput::make('opponent'),
                 DatePicker::make('played_on')
                     ->required(),
-                TimePicker::make('starts_at'),
+                TimePicker::make('starts_at')
+                    ->required(),
                 TextInput::make('innings')
                     ->required()
                     ->numeric()

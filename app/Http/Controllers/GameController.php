@@ -163,7 +163,7 @@ class GameController extends Controller
             'competition_id' => ['nullable', 'integer', Rule::exists('competitions', 'id')->where('team_id', $team->id)],
             'opponent' => ['nullable', 'string', 'max:100'],
             'played_on' => ['required', 'date'],
-            'starts_at' => ['nullable', 'date_format:H:i'],
+            'starts_at' => ['required', 'date_format:H:i'],
             'innings' => ['nullable', 'integer', 'min:1', 'max:'.Game::MAX_INNINGS],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);

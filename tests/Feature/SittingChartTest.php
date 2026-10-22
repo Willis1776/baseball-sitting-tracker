@@ -26,7 +26,7 @@ class SittingChartTest extends TestCase
 
     private function newGame(array $attributes = []): Game
     {
-        $this->post(route('games.store', $this->team), ['played_on' => '2026-10-10', ...$attributes]);
+        $this->post(route('games.store', $this->team), ['played_on' => '2026-10-10', 'starts_at' => '18:00', ...$attributes]);
 
         return $this->team->games()->latest('id')->first();
     }
@@ -152,7 +152,7 @@ class SittingChartTest extends TestCase
         $game = $this->newGame(['innings' => 7]);
         $this->sit($game, $player->id, 7);
 
-        $this->put(route('games.update', [$this->team, $game]), ['played_on' => '2026-10-10', 'innings' => 6]);
+        $this->put(route('games.update', [$this->team, $game]), ['played_on' => '2026-10-10', 'starts_at' => '18:00', 'innings' => 6]);
 
         $this->assertSame(0, $game->sits()->count());
     }
@@ -168,7 +168,13 @@ class SittingChartTest extends TestCase
         }
 
         $this->post(route('games.innings.add', [$this->team, $game]))->assertStatus(422);
-        $this->put(route('games.update', [$this->team, $game]), ['played_on' => '2026-10-10', 'innings' => 10])->assertSessionHasErrors('innings');
+        $this->put(route('games.update', [$this->team, $game]), ['played_on' => '2026-10-10', 'starts_at' => '18:00', 'innings' => 10])->assertSessionHasErrors('innings');
+    }
+
+    public function test_games_require_a_start_time(): void
+    {
+        $this->post(route('games.store', $this->team), ['played_on' => '2026-10-10'])->assertSessionHasErrors('starts_at');
+        $this->assertSame(0, $this->team->games()->count());
     }
 
     public function test_roster_active_toggles_never_change_existing_game_lineups(): void

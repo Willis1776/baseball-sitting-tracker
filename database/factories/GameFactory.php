@@ -22,6 +22,7 @@ class GameFactory extends Factory
             'team_id' => Team::factory(),
             'opponent' => fake()->city(),
             'played_on' => now()->toDateString(),
+            'starts_at' => '18:00',
             'innings' => 6,
         ];
     }

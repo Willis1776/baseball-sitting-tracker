@@ -14,6 +14,7 @@
         <title inertia>{{ config('app.name') }}</title>
         @fonts
         @routes
+        @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx'])
         <x-inertia::head />
     </head>
