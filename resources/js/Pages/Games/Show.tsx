@@ -36,6 +36,7 @@ export default function GameShow({ team, game, gameNumber, prevGameId, nextGameI
     const [sort, setSort] = useState<'roster' | 'fewest'>('roster');
     const [panel, setPanel] = useState<'lineup' | 'menu' | 'edit' | 'delete' | null>(null);
     const queue = useRef<Promise<unknown>>(Promise.resolve());
+    const pendingSaves = useRef(0);
     const scroller = useRef<HTMLDivElement>(null);
     const previousInnings = useRef(game.innings);
     const [addingInning, setAddingInning] = useState(false);
@@ -73,20 +74,57 @@ export default function GameShow({ team, game, gameNumber, prevGameId, nextGameI
             navigator.vibrate?.(10);
 
             // Serialize writes so rapid taps on the same cell land in order.
+            pendingSaves.current++;
             queue.current = queue.current.then(() =>
-                sendJson('PUT', route('games.sits.toggle', [team.id, game.id]), { player_id: playerId, inning, sat: next }).catch(() => {
-                    setSat((prev) => {
-                        const s = new Set(prev);
-                        next ? s.delete(k) : s.add(k);
-                        return s;
-                    });
-                    setError('Could not save. Check your connection and try again.');
-                    setTimeout(() => setError(null), 3500);
-                }),
+                sendJson('PUT', route('games.sits.toggle', [team.id, game.id]), { player_id: playerId, inning, sat: next })
+                    .then(() => {
+                        pendingSaves.current--;
+                        // Mirror the saved sit into the page props, which Inertia also keeps in browser
+                        // history. Otherwise Back, or a phone reloading the tab after a long idle,
+                        // restores the sits as they were when the page first loaded.
+                        router.replaceProp('sits', (current: [number, number][]) => [
+                            ...current.filter(([p, i]) => p !== playerId || i !== inning),
+                            ...(next ? [[playerId, inning] as [number, number]] : []),
+                        ]);
+                    })
+                    .catch(() => {
+                        pendingSaves.current--;
+                        setSat((prev) => {
+                            const s = new Set(prev);
+                            next ? s.delete(k) : s.add(k);
+                            return s;
+                        });
+                        setError('Could not save. Check your connection and try again.');
+                        setTimeout(() => setError(null), 3500);
+                    }),
             );
         },
         [sat, team.id, game.id],
     );
+
+    // Whenever fresh sits arrive from the server (or a saved tap is mirrored above), show them,
+    // unless taps are still saving, in which case the local state is the newer one.
+    useEffect(() => {
+        if (pendingSaves.current === 0) setSat(new Set(sits.map(([p, i]) => key(p, i))));
+    }, [sits]);
+
+    // Coming back to the page (unlocking the phone, switching back to the browser) re-reads the
+    // chart, so anything restored from a stale copy, or changed by another coach, is corrected.
+    useEffect(() => {
+        const refresh = () => {
+            if (document.visibilityState === 'visible' && pendingSaves.current === 0) {
+                router.reload({ only: ['sits', 'lineup', 'otherTotals', 'game'] });
+            }
+        };
+        // `persisted`: restored from the back-forward cache rather than a normal load.
+        const onPageShow = (e: PageTransitionEvent) => e.persisted && refresh();
+        document.addEventListener('visibilitychange', refresh);
+        window.addEventListener('pageshow', onPageShow);
+        return () => {
+            document.removeEventListener('visibilitychange', refresh);
+            window.removeEventListener('pageshow', onPageShow);
+        };
+    }, []);
 
     const gameCount = (playerId: number) => innings.filter((i) => sat.has(key(playerId, i))).length;
 

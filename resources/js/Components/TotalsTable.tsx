@@ -60,7 +60,7 @@ export default function TotalsTable({ report, team, showInactive = true }: { rep
                                     </Link>
                                 </th>
                             ))}
-                            <th className="sticky right-0 border-b border-l border-slate-200 bg-navy-50 px-3 py-2 text-center text-xs font-bold text-navy-800 uppercase">
+                            <th className="sticky right-0 z-10 border-b border-l border-slate-200 bg-navy-50 px-3 py-2 text-center text-xs font-bold text-navy-800 uppercase">
                                 Total
                             </th>
                         </tr>
@@ -88,10 +88,15 @@ export default function TotalsTable({ report, team, showInactive = true }: { rep
                                         </td>
                                     );
                                 })}
+                                {/* Sticky over scrolled game columns, so every background here must be opaque. */}
                                 <td
                                     className={clsx(
-                                        'sticky right-0 border-b border-l border-slate-100 px-3 py-2 text-center text-base font-bold tabular-nums',
-                                        max > min && row.total === max ? 'bg-stitch-50 text-stitch-700' : max > min && row.total === min ? 'bg-emerald-50 text-emerald-700' : 'bg-navy-50/60 text-navy-800',
+                                        'sticky right-0 z-10 border-b border-l border-slate-100 px-3 py-2 text-center text-base font-bold tabular-nums',
+                                        max > min && row.total === max
+                                            ? 'bg-stitch-50 text-stitch-700'
+                                            : max > min && row.total === min
+                                              ? 'bg-emerald-50 text-emerald-700'
+                                              : 'bg-[color-mix(in_srgb,var(--color-navy-50)_60%,white)] text-navy-800',
                                     )}
                                 >
                                     {row.total}
